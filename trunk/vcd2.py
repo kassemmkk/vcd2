@@ -5,6 +5,7 @@ vcd2.py
 
 Created by Nathaniel Pinckney on 2008-05-20.
 Copyright (c) 2008 Nathaniel Pinckney. All rights reserved.
+Released under GPL v3.
 """
 
 # TODO Check if enable is an input port
