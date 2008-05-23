@@ -24,12 +24,17 @@ class VCDData
   end
   
   def processVar(symbol, value)
-    puts "Processing #{@ports[symbol].size } with value #{value.size}"
-    if @ports[symbol].size != value.length
+    if @ports[symbol].size < value.length
       puts "Error: Value '#{value}' for #{@ports[symbol].name} does not match length #{@ports[symbol].size}"
       exit
     end
-    @dump[@curtime][symbol] = value
+    @dump[@curtime][symbol] = extendVector(value, @ports[symbol].size)
+  end
+  
+  def extendVector(value, size)
+    chr = value[0,1]
+    chr.tr! "10zxZX", "00zxZX"
+     chr * (size - value.length) + value
   end
   
   def initialize(file)
@@ -51,7 +56,6 @@ class VCDData
       when /\$var/            # Variable Definition
         words = line.split
         @ports[words[3]] = VCDPort.new(words)
-        puts "Just added #{@ports[words[3]].name}#{@ports[words[3]].range.to_s}"
       when /^#(\d+)/          # Time
         newTime $1
       when /\$dumpvars/       # Dump variable
