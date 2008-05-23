@@ -23,6 +23,15 @@ class VCDData
     ports.each { |k, v| @dump[@curtime][k] = v }
   end
   
+  def processVar(symbol, value)
+    puts "Processing #{@ports[symbol].size } with value #{value.size}"
+    if @ports[symbol].size != value.length
+      puts "Error: Value '#{value}' for #{@ports[symbol].name} does not match length #{@ports[symbol].size}"
+      exit
+    end
+    @dump[@curtime][symbol] = value
+  end
+  
   def initialize(file)
     @ports = {}
     @dump = {}
@@ -47,7 +56,9 @@ class VCDData
         newTime $1
       when /\$dumpvars/       # Dump variable
       when /^(x|0|1)(\S+)/    # Signal
+        processVar $2,$1
       when /^b(\S+)\s+(\S+)/  # Bus
+        processVar $2,$1
       # else
         # puts "Warning: could not parse \"#{line}\"!"
         # exit
@@ -71,6 +82,10 @@ class VCDPort
 		  @range = PortRange.new('')
 		end
   end
+  
+  def size
+    @range.size
+  end
 end
 
 class PortRange
@@ -84,8 +99,8 @@ class PortRange
     else
       @bus = true
       if str_range =~ /\[(\d+):(\d+)\]/
-        @end = $1
-        @begin = $2
+        @end = $1.to_i
+        @begin = $2.to_i
       end
     end
   end
@@ -113,7 +128,7 @@ class PortRange
   end
   
   def size
-    @end - @begin    
+    @end - @begin + 1    
   end
 end
 
