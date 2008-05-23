@@ -7,26 +7,53 @@ require 'ostruct'
 class VCDData
   attr_reader :ports, :date, :version, :timescale
   
+  def readDecl(file)
+    string = nil
+    while line = file.gets
+      line.strip!
+      return string if line =~ /\$end/ 
+      string = line
+    end
+  end  
+  
+  def newTime(time)
+    @oldtime = @curtime
+    @curtime = time
+    @dump[@curtime] = {}
+    ports.each { |k, v| @dump[@curtime][k] = v }
+  end
+  
   def initialize(file)
     @ports = {}
+    @dump = {}
+    @dump[0] = {}
+    @oldtime = 0
+    @curtime = 0
+    
     while(line = file.gets)
       line.strip!
       case line
-      when /\$date/
-        @date = 0
-      when /\$version/
-        @version = 0
-      when /\$timescale/
-        @timescale = 0
-      when /\$var/
+      when /\$date/           # Date
+        @date = readDecl(file)
+      when /\$version/        # Version
+        @version = readDecl(file)
+      when /\$timescale/      # Timescale
+        @timescale = readDecl(file)
+      when /\$var/            # Variable Definition
         words = line.split
         @ports[words[3]] = VCDPort.new(words)
-        puts "Just added #{@ports[words[3]].name}#{@ports[words[3]].range.bus?}"
+        puts "Just added #{@ports[words[3]].name}#{@ports[words[3]].range.to_s}"
+      when /^#(\d+)/          # Time
+        newTime $1
+      when /\$dumpvars/       # Dump variable
+      when /^(x|0|1)(\S+)/    # Signal
+      when /^b(\S+)\s+(\S+)/  # Bus
+      # else
+        # puts "Warning: could not parse \"#{line}\"!"
+        # exit
       end
     end
-end
-  
-  
+  end
 end
 
 class VCDPort
@@ -46,23 +73,33 @@ class VCDPort
   end
 end
 
-class PortRange < Range
+class PortRange
+  attr_reader :begin, :end
+  
   def initialize(str_range)
     if str_range == ''
       @bus = false
-      # begin = end = 0
+      @begin = 0
+      @end = 0
     else
       @bus = true
       if str_range =~ /\[(\d+):(\d+)\]/
-        @end = $2
-        @begin = $1
-        puts "begin #{$1} and end #{$2}"
+        @end = $1
+        @begin = $2
       end
     end
   end
   
   def to_s
-    "here"
+    if bus?
+      if @begin != @end 
+        "[#{@end}:#{@begin}]"
+      else
+        "[#{@begin}]"
+      end
+    else
+      ''
+    end
   end
   
   # True if bus
@@ -73,6 +110,10 @@ class PortRange < Range
   # True if signal
   def signal?
     not @bus
+  end
+  
+  def size
+    @end - @begin    
   end
 end
 
