@@ -65,10 +65,12 @@ class PortRange < Range
     "here"
   end
   
+  # True if bus
   def bus?
     @bus
   end
   
+  # True if signal
   def signal?
     not @bus
   end
