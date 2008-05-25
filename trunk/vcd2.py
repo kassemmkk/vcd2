@@ -14,6 +14,9 @@ import sys
 import getopt
 import ConfigParser
 import re
+from optparse import OptionParser
+
+import VCDConfigParser
 
 help_message = '''
 The help message goes here.
@@ -43,55 +46,58 @@ class VCDData(object):
 	def __init__(self):
 		super(VCDData, self).__init__()
 		self.ports = dict();
+		self.curtime = 0
 
 	# TODO Update this for better parsing (e.g. multi-line)
 	def readfp(self,fname):
-		def newTime():
-			"""docstring for newTime"""
+		def newTime(time):
+			"""Process a new time"""
+			self.oldtime = self.curtime
+			self.curtime = time
 			pass
+			
+		def readDecl(fname):
+			"""Reads in a declaration"""
+			string = ""
+			for line in fname:
+				line = line.strip()
+				if line.find("#end"): return line
+				string = line
 
-		for line in fname:
+		for line in file:
 			line = line.strip()
 			words = line.split()
+			matchdate = re.match('^#(\d+)',line)
 			if words[0] == '$date':
-				print "Found a date"
-				self.date = 1
+				self.date = readDecl(fname)
+				print "Date:", self.date
 			elif re.match('\$version',line):
-				print "Found a version"
-				self.version = 1
+				self.version = readDecl(fname)
+				print "Version:", self.version
 			elif re.match('\$timescale',line):
-				print "Found a timescale"
-				self.timescale = 1
+				self.timescale = readDecl(fname)
+				print "Timescale", self.timescale
 			elif words[0] == '$var':
 				self.ports[words[3]] = VCDPort(words);
-			elif re.match('^#\d+',line):	# New time
-				newTime()
-			elif re.match('\$dumpvars',line):			# Begin dumpvar
+			elif matchdate:
+				newTime(matchdate.group(1))
+			elif re.match('\$dumpvars',line):
 				pass
-
-def main(argv=None):
-	if argv is None:
-		argv = sys.argv
-	try:
-		try:
-			opts, args = getopt.getopt(argv[1:], "ho:v", ["help", "output="])
-		except getopt.error, msg:
-			raise Usage(msg)
-	
-		# option processing
-		for option, value in opts:
-			if option == "-v":
-				verbose = True
-			if option in ("-h", "--help"):
-				raise Usage(help_message)
-			if option in ("-o", "--output"):
-				output = value
-	
-	except Usage, err:
-		print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
-		print >> sys.stderr, "\t for help use --help"
-		return 2
 		
+def main(argv=None):
+	parser = OptionParser()
+	parser.add_option("-f", "--file", dest="filename",
+						help="write report to FILE", metavar="FILE")
+	parser.add_option("-v", "--verbose",
+						action="store_true", dest="verbose", default="False",
+						help="Don't print status messages to stdout")
+	(options, args) = parser.parse_args()
+	
+	parser.error("Filename must be specified!")
+	
+	if options.verbose:
+		print "reading %s..." % options.filename
+	
 	config = ConfigParser.ConfigParser()
 	
 	fname = open("example.conf","r")

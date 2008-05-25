@@ -114,13 +114,10 @@ class VCDParser:
 			# Check which regexp matched
 			if match_date:
 				self.date = self.__readDecl(file)
-				print "Date:", self.date
 			elif match_version:
 				self.version = self.__readDecl(file)
-				print "Version:", self.version
 			elif match_timescale:
 				self.timescale = self.__readDecl(file)
-				print "Timescale:", self.timescale
 			# Variable definition
 			elif match_var:
 				words = line.split()
@@ -214,6 +211,11 @@ class VCDParser:
 	def is_signal(self, port):
 		symbol = self.__get_symbol(port)
 		return self.__ports[symbol].is_signal()
+
+	def port_size(self, port):
+		"""Returns size of port"""
+		symbol = self.__get_symbol(port)
+		return self.__ports[symbol].size()
 
 def main():
 	import VCDConfigParser
