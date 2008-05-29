@@ -48,16 +48,16 @@ class VCDConfigParser(ConfigParser):
 	def has_section(self, section):
 		return ConfigParser.has_section(self, self.__realsection(section))
 	
-	def items(section):
+	def items(self, section):
 		return ConfigParser.items(self, self.__realsection(section))
 		
-	def set(section, option, value):
+	def set(self, section, option, value):
 		return ConfigParser.set(self, self.__realsection(section), option, value)
 		
-	def remove_option(section, option):
+	def remove_option(self, section, option):
 		return ConfigParser.remove_option(self, self.__realsection(section), option)
 		
-	def remove_section(section):
+	def remove_section(self, section):
 		return ConfigParser.remove_section(self, self.__realsection(section))	
 
 	def validate(self, data=None):
@@ -66,6 +66,10 @@ class VCDConfigParser(ConfigParser):
 			print "Error: port %s does not have %s in config file!" % (port, sig)
 			quit()
 		
+		# TODO cleanup, check that DEFAULT has these
+		self._clks = []
+		self._clks += [self.defaults()['CLK']]
+		
 		for section in self.sections():
 			if(not self.has_option(section, 'CLK')):
 				error(section, 'CLK')
@@ -73,12 +77,18 @@ class VCDConfigParser(ConfigParser):
 				error(section, 'CLKDIR')
 			if(not self.has_section(self.get(section,'CLK'))):
 				error(section, 'no clock section %s' % self.get(section,'CLK')) 
+			self._clks += [self.get(section,'CLK')]
+		
+		self._clks = list(set(self._clks))
 		
 		# If we were passed a .VCD data object, validate all sections exist
 		if data:
 			for port in data.ports():
 				if not self.has_section(port):
 					print "Warning: no section for port '%s' in .conf file" % port
+		
+	def clks(self):
+		return self._clks
 
 def main():
 	config = VCDConfigParser()

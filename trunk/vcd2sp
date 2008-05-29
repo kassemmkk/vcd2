@@ -12,6 +12,51 @@ import os
 from VCD import *
 import VCDConfigParser
 
+# TODO get_signal()/get_bus() just get
+# TODO Config file should be able to specify bits of bus
+
+def print_vectors():
+	global config, vcd
+	
+	clkname = config.defaults()['CLK']
+	clkdir = config.defaults()['CLKDIR']
+	clkdelay = config.defaults()['CLKDELAY']
+	resetname = config.defaults()['RESET']
+	
+	reset_count = 0
+	run_count = 0
+	
+	# FIXME Have to set clk to something less arbitrary.... I think?	
+	clk = '0'
+	old_time = 0
+	
+	for time in vcd.times():
+		vcd.set_time(time)
+		oldclk = clk
+		clk = vcd.get_signal(clkname)
+		if (oldclk == '1' and clk == '0' and clkdir == 'fall') or \
+		   (oldclk == '0' and clk == '1' and clkdir == 'rise'):
+			if vcd.get_signal(resetname):
+				reset_count += 1
+			else:
+				run_count += 1
+			if clkdelay == '1':
+				set_time(old_time)
+			print_vector()
+		old_time = time
+		
+# TODO Skip all clocks...
+def print_vector():
+	global config, vcd
+	
+	resetname = config.defaults()['RESET']
+	
+	arr = []
+	for port in vcd.ports():
+		if port in vcd.clks(): continue
+		for bit in vcd.bits(port):
+			
+
 def main():
 	global config, vcd
 	
@@ -60,6 +105,10 @@ def main():
 	print "RADIX", ' '.join(arr)
 	
 	print
+	
+	print_vectors()
+	
+	#print "Default's clock:", config.defaults()['CLK']
 	
 	#arr = []
 	#for time in vcd.times():
