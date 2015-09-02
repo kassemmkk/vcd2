@@ -1,0 +1,1 @@
+This is a suite of utilities to convert Verilog value change dump (.VCD) files to other formats, including HSPICE digital vector files (.VEC) and IRSIM command (.CMD) files.
